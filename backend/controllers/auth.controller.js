@@ -23,7 +23,7 @@ export const signup = async (req, res) => {
         if (password.length < 6) {
             return res.status(400).json({ error: "Password must be at least 6 characters" })
         }
-        
+
         //hashing password with salt
 
         const salt = await bcrypt.genSalt(10) // 10 is the optimal salt length
@@ -60,17 +60,42 @@ export const signup = async (req, res) => {
     }
 }
 
-export const login = (req, res) => {
+export const login = async (req, res) => {
     try {
-        
+        const {username, password} = req.body
+        const user = await User.findOne({username})
+        const isPasswordValid = await bcrypt.compare(password, user?.password || "")
+
+        if (!user || !isPasswordValid) {
+            return res.status(400).json({error: "Invalid Username or Password"})
+        }
+
+        generateTokenAndSetCookie(user._id, res)
+
+        res.status(200).json({
+            _id: user._id,
+            fullName: user.fullName,
+            username: user.username,
+            email: user.email,
+            followers: user.followers,
+            following: user.following,
+            profileImg: user.profileImg,
+            coverImg: user.coverImg,
+        })
+
     } catch (error) {
-        console.log("Error in signup controller", error.message)
+        console.log("Error in login controller", error.message)
         res.status(500).json({error: "Internal Server Error"})
     }
 }
 
 export const logout = (req, res) => {
-    res.json({
-        data: "you hit the logout endpoints"
-    })
+    try {
+        res.cookie("jwt", "", {maxAge: 0})
+        res.status(200).json({message: "Logged Out Successfully"})
+
+    } catch (error) {
+        console.log("Error in logout controller", error.message)
+        res.status(500).json({error: "Internal Server Error"})
+    }
 }
