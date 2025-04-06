@@ -10,7 +10,7 @@ export const signup = async (req, res) => {
             return res.status(400).json({error: "Invaild Email format"})
         }
 
-        const existingUser = await User.findOne({ username }); // more like {username: username} but since it is single variable so it is {username} only
+        const existingUser = await User.findOne({ username }); // more like {username: username} but since it is single variable and Key-Value Pair being same nameing. so it is {username} only
         if (existingUser) {
             return res.status(400).json({ error: "Username is already taken" })
         }
