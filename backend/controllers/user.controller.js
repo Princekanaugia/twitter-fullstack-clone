@@ -1,3 +1,7 @@
+import bcrypt from "bcryptjs";
+import { v2 as cloudinary } from "cloudinary";
+
+// models
 import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
 
@@ -97,11 +101,81 @@ export const followUnfollowUser = async (req, res) => {
     }
 }
 
-export const updateUserProfile = async (req, res) => {
+export const updateUser  = async (req, res) => {
+    const {fullName, email, username, currentPassword, newPassword, bio, link} = req.body;
+    let { profileImg, coverImg } = req.body;
+
+    const userId = req.user._id;
+    
     try {
-        
+        let user = await User.findById(userId)
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if (( !newPassword && currentPassword ) || ( !currentPassword && newPassword )) {
+            return res.status(400).json({ error: 'Please provide both current passwor and new password' });
+        }
+
+        if ( currentPassword && newPassword ) {
+            const isMatch = await bcrypt.compare( currentPassword, user.password);
+            if (!isMatch) {
+                return res.status(400).json({ error: "Current Password is incorrect" })
+            } 
+            if ( newPassword.length < 6) {
+                return res.status(400).json({ error: 'Password must be at least 6 characters long' })
+            }
+
+            const salt = await bcrypt.genSaltSync(10);
+            user.password = await bcrypt.hash(newPassword, salt);
+        }
+
+        if ( profileImg ) { 
+            // deleting already saved profile img
+            if (user.profileImg) {
+                // https://res.cloudinary.com/dyfqon1v6/image/upload/v1712997552/zmxorcxexpdbh8r0bkjb.png
+                // let above URL be the link to the saved profile which we have to delete then extract the 'png name(image id)' from the URL
+                // extract is done by following: user.profile.split('/').pop().split(.)[0]
+                await cloudinary.uploader.destroyer(user.profileImg.split('/').pop().split('.')[0]);
+            }
+
+            // uploading new profile image
+            const uploadedResponse = await cloudinary.uploader.upload(profileImg)
+            profileImg = uploadedResponse.secure_url;
+        }
+
+        if ( coverImg ) {
+            // deleting already saved cover img
+            if (user.coverImg) {
+                // https://res.cloudinary.com/dyfqon1v6/image/upload/v1712997552/zmxorcxexpdbh8r0bkjb.png
+                // let above URL be the link to the saved cover which we have to delete then extract the 'png name(image id)' from the URL
+                // extract is done by following: user.cover.split('/').pop().split(.)[0]
+                await cloudinary.uploader.destroyer(user.coverImg.split('/').pop().split('.')[0]);
+            }
+
+            // uploading new cover image
+            const uploadedResponse = await cloudinary.uploader.upload(coverImg)
+            coverImg = uploadedResponse.secure_url;
+        }
+
+        user.fullName = fullName || user.fullName;
+        user.email = email || user.email;
+        user.username = username || user.username;
+        user.bio = bio || user.bio;
+        user.link = link || user.link;
+        user.profileImg = profileImg || user.profileImg;
+        user.coverImg = coverImg || user.coverImg;
+
+        user = await user.save();
+
+        //password shoulb be null in response
+        user.password = null;
+
+        return res.status(200).json({user})
+
+
     } catch (error) {
-        console.log("Error in updateUserProfile Controller: ", error.message)
+        console.log("Error in updateUser Controller: ", error.message)
         res.status(500).json({error: 'Internal Server Error'})
     }
 }
