@@ -1,4 +1,3 @@
-import { text } from "express";
 import mongoose from "mongoose";
 
 
@@ -34,7 +33,7 @@ const postSchema = new mongoose.Schema({
 
             user: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: true,
+                ref: 'User',
                 required: true
             }
         }
