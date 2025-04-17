@@ -1,13 +1,17 @@
+import { Routes, Route } from 'react-router-dom'
+
+//pages
+import HomePage from './pages/home/HomePage'
+import SignUpPage from './pages/auth/signup/SignUpPage.jsx'
+import LoginPage from './pages/auth/login/LoginPage'
+
 import './App.css'
 
-import { Routes, Route } from 'express'
-import HomePage from './pages/home/HomePage'
-import SignUpPage from './pages/auth/signup/SignUpPage'
-import LoginPage from './pages/auth/login/LoginPage'
 
 function App() {
 
   return <>
+    
     <div className='flex max-w-6xl mx-auto'>
 			<Routes>
 				<Route path='/' element={<HomePage />} />
